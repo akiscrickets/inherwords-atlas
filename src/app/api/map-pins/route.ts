@@ -1,88 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { NextResponse } from 'next/server'
 import { sql } from '@vercel/postgres'
 
 export async function GET() {
   try {
-    if (process.env.NODE_ENV === 'production') {
-      // Production: Read from Vercel Postgres database
-      console.log('Loading map pins from database... (restart trigger)')
-      
-      try {
-        // Try to get story field, fallback if column doesn't exist
-        let result
-        let hasStoryColumn = true
-        try {
-          result = await sql`
-            SELECT id, title, story, lat, lng, type, category, country, city, created_at
-            FROM map_pins
-            ORDER BY created_at DESC
-          `
-        } catch (columnError) {
-          console.log('Story column does not exist, using basic query')
-          hasStoryColumn = false
-          result = await sql`
-            SELECT id, title, lat, lng, type, category, country, city, created_at
-            FROM map_pins
-            ORDER BY created_at DESC
-          `
-        }
-        
-        const pins = result.rows.map(row => {
-          // BULLETPROOF type detection for pins
-          let pinType = row.type || 'story'
-          
-          // Double-check: if ID contains 'organization' or category is 'organization', override type
-          if (row.id?.includes('organization') || 
-              row.category === 'organization' ||
-              row.title?.toLowerCase().includes('organization')) {
-            pinType = 'organization'
-          }
-          
-          return {
-            id: row.id,
-            title: row.title,
-            story: hasStoryColumn ? (row.story || '') : '',
-            lat: Number(row.lat),
-            lng: Number(row.lng),
-            type: pinType, // Use our bulletproof type
-            category: row.category,
-            country: row.country,
-            city: row.city
-          }
-        })
-        
-        console.log(`Returning ${pins.length} pins from database`)
-        console.log('Sample pin with story info:', pins[0] ? { id: pins[0].id, title: pins[0].title, story: pins[0].story ? 'HAS STORY' : 'NO STORY', storyLength: pins[0].story?.length || 0 } : 'No pins')
-        return NextResponse.json({ pins })
-      } catch (dbError) {
-        console.error('Database error, using fallback pins:', dbError)
-        // Fall through to fallback pins
+    // fetch pins from DB
+    const result = await sql`SELECT * FROM map_pins`
+    const rows = result.rows || []
+
+    const pins = rows.map((row: any) => {
+      const rawType = (row.type || 'story').toLowerCase()
+      const rawCategory = (row.category || '').toLowerCase()
+      const lowerTitle = (row.title || '').toLowerCase()
+
+      let pinType: 'story' | 'organization' | 'event' | 'resource' | 'Violation of Human Rights' = 'story'
+
+      if (['story', 'organization', 'event', 'resource', 'violation of human rights'].includes(rawType)) {
+        pinType = rawType === 'violation of human rights' ? 'Violation of Human Rights' : rawType as typeof pinType
       }
-    } else {
-      // Local development: Read from local JSON file
-      console.log('Loading map pins from local file...')
-      
-      const filePath = path.join(process.cwd(), 'src/data/map-pins.json')
-      const fileContents = await fs.readFile(filePath, 'utf8')
-      const pins = JSON.parse(fileContents)
-      
-      console.log(`Returning ${pins.length} pins from local storage`)
-      console.log('First pin with story:', pins[0])
-      return NextResponse.json({ pins })
-    }
+
+      if (['organization', 'event', 'resource', 'violation of human rights'].includes(rawCategory)) {
+        pinType = rawCategory === 'violation of human rights' ? 'Violation of Human Rights' : rawCategory as typeof pinType
+      }
+
+      if (row.id?.includes('organization') || lowerTitle.includes('organization') || lowerTitle.includes('foundation') || lowerTitle.includes('center') || lowerTitle.includes('institute')) {
+        pinType = 'organization'
+      }
+
+      if ((row.story || '').toLowerCase().includes('violation of human rights')) {
+        pinType = 'Violation of Human Rights'
+      }
+
+      return {
+        id: row.id,
+        title: row.title,
+        story: row.story,
+        lat: Number(row.lat),
+        lng: Number(row.lng),
+        type: pinType,
+        category: row.category,
+        country: row.country,
+        city: row.city
+      }
+    })
+
+    return NextResponse.json({ pins })
   } catch (error) {
-    console.error('Error loading map pins:', error)
+    return NextResponse.json({ error: 'Failed to fetch pins' }, { status: 500 })
   }
-  
-  // Return fallback pins if everything else fails
-  const fallbackPins = [
-    { title: 'NYC Healthcare Story', story: 'A healthcare access story from New York City', lat: 40.7128, lng: -74.0060, type: 'story', category: 'healthcare' },
-    { title: 'LA Support Center', story: 'Supporting women in Los Angeles', lat: 34.0522, lng: -118.2437, type: 'story', category: 'support' },
-    { title: 'London Workplace Rights', story: 'Fighting for workplace equality in London', lat: 51.5074, lng: -0.1278, type: 'story', category: 'workplace' }
-  ]
-  
-  console.log('Using fallback pins due to error')
-  return NextResponse.json({ pins: fallbackPins })
 }
