@@ -1,0 +1,71 @@
+/* Minimal full-page story styling — tweak to match your app theme */
+.story-page-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color: #111;
+  background: #fafafa;
+}
+
+.story-page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  background: white;
+  border-bottom: 1px solid #eee;
+}
+
+.story-back-btn {
+  background: transparent;
+  border: 1px solid #ddd;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.story-page-header-title h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.story-meta {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 6px;
+}
+
+.story-page-body {
+  flex: 1;
+  padding: 28px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.story-article {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(18, 18, 18, 0.04);
+  line-height: 1.7;
+}
+
+.story-paragraph {
+  margin: 0 0 12px 0;
+}
+
+.story-loading,
+.story-error {
+  color: #666;
+  text-align: center;
+  margin-top: 28px;
+}
+
+.story-page-footer {
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #666;
+  border-top: 1px solid #eee;
+}
