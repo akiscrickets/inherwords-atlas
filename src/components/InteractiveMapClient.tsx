@@ -24,7 +24,7 @@ interface MapPin {
   id?: string
   lat: number
   lng: number
-  type: 'story' | 'organization'
+  type: 'story' | 'organization' | 'Violation of Womens Rights'
   title: string
   category: string
   story?: string
