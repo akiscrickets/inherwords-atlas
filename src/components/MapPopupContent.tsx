@@ -1,7 +1,6 @@
 'use client';
 
 import React from "react";
-import { useRouter } from "next/navigation";
 
 type MapPopupContentProps = {
   id: string;
@@ -20,39 +19,41 @@ export default function MapPopupContent({
   excerpt, 
   fullStory 
 }: MapPopupContentProps) {
-  const router = useRouter();
 
   function openFullPage() {
-    // Use Next.js routing with query params instead of state
-    const params = new URLSearchParams({
-      title: title || 'Story',
-      author: author || '',
-      country: country || '',
-    });
-    router.push(`/story/${encodeURIComponent(id)}?${params.toString()}`);
+    // Open in new tab
+    window.open(`/story/${encodeURIComponent(id)}`, '_blank');
   }
+
+  // Clean preview text - limit to 200 chars
+  const previewText = excerpt || fullStory;
+  const displayPreview = previewText && previewText.length > 200 
+    ? previewText.substring(0, 200) + '...' 
+    : previewText;
 
   return (
     <div className="map-popup-content">
-      <div className="map-popup-head">
-        <strong>{title || "Story"}</strong>
+      <div className="map-popup-header">
+        <h3>{title || "Story"}</h3>
         <div className="map-popup-meta">
-          {author && <small>By {author}</small>}
-          {country && <small> — {country}</small>}
+          {author && <span className="popup-author">By {author}</span>}
+          {country && <span className="popup-location">📍 {country}</span>}
         </div>
       </div>
-      <div className="map-popup-excerpt">
-        <small>
-          {excerpt || (fullStory.length > 200 ? fullStory.slice(0, 200) + "…" : fullStory)}
-        </small>
+      
+      <div className="map-popup-body">
+        <p className="map-popup-text">
+          {displayPreview || 'No preview available'}
+        </p>
       </div>
-      <div className="map-popup-actions">
+      
+      <div className="map-popup-footer">
         <button
-          className="map-popup-open-full"
+          className="map-popup-read-more"
           onClick={openFullPage}
-          aria-label="Open full story page"
+          aria-label="Read full story in new tab"
         >
-          Read full story
+          Read Full Story →
         </button>
       </div>
     </div>

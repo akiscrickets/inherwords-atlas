@@ -436,7 +436,12 @@ export default function InteractiveMapClient() {
         />
       )
       
-      marker.bindPopup(popupDiv)
+      // Bind popup with custom options
+      marker.bindPopup(popupDiv, {
+        maxWidth: 350,
+        minWidth: 280,
+        className: 'custom-popup'
+      })
     })
   }, [storyPins]) // Re-run when storyPins changes
 
