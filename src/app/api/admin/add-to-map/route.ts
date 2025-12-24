@@ -153,10 +153,8 @@ export async function POST(request: NextRequest) {
       city: city || ''
     }
 
-    // Check if we have database connection
-    const hasDatabase = process.env.POSTGRES_URL && process.env.NODE_ENV === 'production'
-    
-    if (hasDatabase) {
+    // Try database first in production, fallback to file system
+    if (process.env.NODE_ENV === 'production' && process.env.POSTGRES_URL) {
       // Production with database: Use Vercel Postgres
       console.log('💾 Using Vercel Postgres database')
       try {
