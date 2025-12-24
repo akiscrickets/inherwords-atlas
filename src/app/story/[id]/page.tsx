@@ -14,7 +14,29 @@ type StoryData = {
 
 async function getStoryById(id: string): Promise<StoryData | null> {
   try {
-    // Fetch from your API - adjust endpoint as needed
+    // First try to get from map pins (for stories added to map)
+    try {
+      const mapResponse = await fetch(`/api/map-pins`);
+      if (mapResponse.ok) {
+        const mapData = await mapResponse.json();
+        const pins = mapData.pins || [];
+        const pin = pins.find((p: { id: string }) => p.id === id);
+        
+        if (pin) {
+          return {
+            id: pin.id,
+            title: pin.title,
+            author: 'Anonymous',
+            country: pin.country,
+            story: pin.story || 'No story content available',
+          };
+        }
+      }
+    } catch (mapError) {
+      console.log('Not found in map pins, trying stories API');
+    }
+    
+    // Fall back to stories API
     const response = await fetch(`/api/admin/stories?id=${encodeURIComponent(id)}`);
     if (!response.ok) return null;
     const data = await response.json();

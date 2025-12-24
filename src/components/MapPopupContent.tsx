@@ -25,37 +25,20 @@ export default function MapPopupContent({
     window.open(`/story/${encodeURIComponent(id)}`, '_blank');
   }
 
-  // Clean preview text - limit to 200 chars
+  // Clean preview text - limit to 150 chars for compact view
   const previewText = excerpt || fullStory;
-  const displayPreview = previewText && previewText.length > 200 
-    ? previewText.substring(0, 200) + '...' 
+  const displayPreview = previewText && previewText.length > 150 
+    ? previewText.substring(0, 150) + '...' 
     : previewText;
 
   return (
-    <div className="map-popup-content">
-      <div className="map-popup-header">
-        <h3>{title || "Story"}</h3>
-        <div className="map-popup-meta">
-          {author && <span className="popup-author">By {author}</span>}
-          {country && <span className="popup-location">📍 {country}</span>}
-        </div>
-      </div>
-      
-      <div className="map-popup-body">
-        <p className="map-popup-text">
-          {displayPreview || 'No preview available'}
-        </p>
-      </div>
-      
-      <div className="map-popup-footer">
-        <button
-          className="map-popup-read-more"
-          onClick={openFullPage}
-          aria-label="Read full story in new tab"
-        >
-          Read Full Story →
-        </button>
-      </div>
+    <div className="map-popup-simple">
+      <h4>{title || "Story"}</h4>
+      {country && <p className="popup-location">{country}</p>}
+      <p className="popup-preview">{displayPreview || 'Click to read this story'}</p>
+      <button onClick={openFullPage} className="popup-btn">
+        Read More →
+      </button>
     </div>
   );
 }

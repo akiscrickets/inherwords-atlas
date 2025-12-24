@@ -436,10 +436,10 @@ export default function InteractiveMapClient() {
         />
       )
       
-      // Bind popup with custom options
+      // Bind popup with custom options for compact size
       marker.bindPopup(popupDiv, {
-        maxWidth: 350,
-        minWidth: 280,
+        maxWidth: 260,
+        minWidth: 260,
         className: 'custom-popup'
       })
     })
