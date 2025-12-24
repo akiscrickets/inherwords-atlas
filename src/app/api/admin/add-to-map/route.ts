@@ -157,12 +157,14 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV === 'production' && process.env.POSTGRES_URL) {
       // Production with database: Use Vercel Postgres
       console.log('💾 Using Vercel Postgres database')
+      console.log('POSTGRES_URL exists:', !!process.env.POSTGRES_URL)
       try {
         // Try to insert with story field, fallback if column doesn't exist
         try {
-          await sql`
+          console.log('🔄 Attempting INSERT with story column...')
+          const insertResult = await sql`
             INSERT INTO map_pins (id, title, story, lat, lng, type, category, country, city)
-            VALUES (${storyId}, ${title}, ${cleanStory}, ${coordinates.lat}, ${coordinates.lng}, ${pinType}, ${category || 'general'}, ${country}, ${city || ''})
+            VALUES (${storyId}, ${cleanTitle}, ${finalStory}, ${coordinates.lat}, ${coordinates.lng}, ${pinType}, ${category || 'general'}, ${country}, ${city || ''})
             ON CONFLICT (id) DO UPDATE SET 
               title = EXCLUDED.title,
               story = EXCLUDED.story,
@@ -173,11 +175,13 @@ export async function POST(request: NextRequest) {
               country = EXCLUDED.country,
               city = EXCLUDED.city
           `
+          console.log('✅ INSERT successful:', insertResult.rowCount, 'row(s) affected')
         } catch (columnError) {
-          console.log('Story column does not exist, using basic insert')
-          await sql`
+          console.log('⚠️ Story column does not exist, using basic insert')
+          console.error('Column error:', columnError)
+          const insertResult = await sql`
             INSERT INTO map_pins (id, title, lat, lng, type, category, country, city)
-            VALUES (${storyId}, ${title}, ${coordinates.lat}, ${coordinates.lng}, ${pinType}, ${category || 'general'}, ${country}, ${city || ''})
+            VALUES (${storyId}, ${cleanTitle}, ${coordinates.lat}, ${coordinates.lng}, ${pinType}, ${category || 'general'}, ${country}, ${city || ''})
             ON CONFLICT (id) DO UPDATE SET 
               title = EXCLUDED.title,
               lat = EXCLUDED.lat,
@@ -187,15 +191,25 @@ export async function POST(request: NextRequest) {
               country = EXCLUDED.country,
               city = EXCLUDED.city
           `
+          console.log('✅ Basic INSERT successful:', insertResult.rowCount, 'row(s) affected')
         }
         
-        console.log(`✅ Added pin to database for ${title} at ${coordinates.lat}, ${coordinates.lng}`)
-        console.log(`📝 Story content saved: ${cleanStory ? `"${cleanStory.substring(0, 50)}..."` : 'NO STORY'}`)
+        // Verify the insert by querying back
+        console.log('🔍 Verifying insert by querying back...')
+        const verifyResult = await sql`
+          SELECT id, title, type FROM map_pins WHERE id = ${storyId}
+        `
+        console.log('✅ Verification query result:', verifyResult.rows[0])
+        
+        console.log(`✅ Added pin to database for ${cleanTitle} at ${coordinates.lat}, ${coordinates.lng}`)
+        console.log(`📝 Story content saved: ${finalStory ? `"${finalStory.substring(0, 50)}..."` : 'NO STORY'}`)
         console.log(`🎯 Pin type: ${pinType}`)
         return NextResponse.json({ success: true, coordinates, pin: newPin })
       } catch (dbError) {
         console.error('❌ Database error:', dbError)
-        return NextResponse.json({ error: 'Failed to save pin to database' }, { status: 500 })
+        console.error('Error name:', (dbError as Error).name)
+        console.error('Error message:', (dbError as Error).message)
+        return NextResponse.json({ error: 'Failed to save pin to database', details: String(dbError) }, { status: 500 })
       }
     } else {
       // Local development: Use file system

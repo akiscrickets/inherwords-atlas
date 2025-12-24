@@ -5,28 +5,36 @@ import { sql } from '@vercel/postgres'
 
 export async function GET() {
   try {
-    if (process.env.NODE_ENV === 'production') {
+    console.log('🔍 MAP-PINS GET REQUEST')
+    console.log('Environment:', process.env.NODE_ENV)
+    console.log('Has POSTGRES_URL:', !!process.env.POSTGRES_URL)
+    
+    if (process.env.NODE_ENV === 'production' && process.env.POSTGRES_URL) {
       // Production: Read from Vercel Postgres database
-      console.log('Loading map pins from database... (restart trigger)')
+      console.log('💾 Loading map pins from database...')
       
       try {
         // Try to get story field, fallback if column doesn't exist
         let result
         let hasStoryColumn = true
         try {
+          console.log('Attempting to query with story column...')
           result = await sql`
             SELECT id, title, story, lat, lng, type, category, country, city, created_at
             FROM map_pins
             ORDER BY created_at DESC
           `
+          console.log(`✅ Query successful: ${result.rows.length} pins found`)
         } catch (columnError) {
-          console.log('Story column does not exist, using basic query')
+          console.log('⚠️ Story column does not exist, using basic query')
+          console.error('Column error:', columnError)
           hasStoryColumn = false
           result = await sql`
             SELECT id, title, lat, lng, type, category, country, city, created_at
             FROM map_pins
             ORDER BY created_at DESC
           `
+          console.log(`✅ Basic query successful: ${result.rows.length} pins found`)
         }
         
         const pins = result.rows.map(row => {
