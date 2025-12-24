@@ -38,19 +38,19 @@ export async function GET() {
         }
         
         const pins = result.rows.map(row => {
-          // Robust type detection for pins, supporting event and resource
+          // Robust type detection for pins, supporting event, resource, and violation
           const rawType = (row.type || 'story').toLowerCase()
           const rawCategory = (row.category || '').toLowerCase()
           const lowerTitle = (row.title || '').toLowerCase()
-          let pinType: 'story' | 'organization' | 'event' | 'resource' = 'story'
+          let pinType: 'story' | 'organization' | 'event' | 'resource' | 'violation' = 'story'
           
           // Prefer explicit correct types
-          if (['story', 'organization', 'event', 'resource'].includes(rawType)) {
+          if (['story', 'organization', 'event', 'resource', 'violation'].includes(rawType)) {
             pinType = rawType as typeof pinType
           }
           
           // Category hints
-          if (['organization', 'event', 'resource'].includes(rawCategory)) {
+          if (['organization', 'event', 'resource', 'violation'].includes(rawCategory)) {
             pinType = rawCategory as typeof pinType
           }
           
@@ -61,6 +61,8 @@ export async function GET() {
             pinType = 'event'
           } else if (lowerTitle.includes('resource') || lowerTitle.includes('hotline') || lowerTitle.includes('shelter') || lowerTitle.includes('clinic') || lowerTitle.includes('guide') || lowerTitle.includes('support')) {
             pinType = 'resource'
+          } else if (row.id?.includes('violation') || lowerTitle.includes('violation') || lowerTitle.includes('abuse') || lowerTitle.includes('discrimination') || lowerTitle.includes('assault') || lowerTitle.includes('harassment')) {
+            pinType = 'violation'
           }
           
           return {
@@ -91,7 +93,7 @@ export async function GET() {
       const fileContents = await fs.readFile(filePath, 'utf8')
       const pinsRaw = JSON.parse(fileContents)
       
-      // Normalize types to include event and resource heuristics
+      // Normalize types to include event, resource, and violation heuristics
       const pins = pinsRaw.map((row: { 
         id?: string; 
         title?: string; 
@@ -107,15 +109,18 @@ export async function GET() {
         const rawCategory = (row.category || '').toLowerCase()
         const lowerTitle = (row.title || '').toLowerCase()
         const storyText = row.story || ''
-        let pinType: 'story' | 'organization' | 'event' | 'resource' = 'story'
+        let pinType: 'story' | 'organization' | 'event' | 'resource' | 'violation' = 'story'
         
-        if (['story', 'organization', 'event', 'resource'].includes(rawType)) pinType = rawType as typeof pinType
-        if (['organization', 'event', 'resource'].includes(rawCategory)) pinType = rawCategory as typeof pinType
+        if (['story', 'organization', 'event', 'resource', 'violation'].includes(rawType)) pinType = rawType as typeof pinType
+        if (['organization', 'event', 'resource', 'violation'].includes(rawCategory)) pinType = rawCategory as typeof pinType
         if (storyText.startsWith('TYPE:organization')) pinType = 'organization'
         if (storyText.startsWith('TYPE:event')) pinType = 'event'
         if (storyText.startsWith('TYPE:resource')) pinType = 'resource'
+        if (storyText.startsWith('TYPE:violation')) pinType = 'violation'
         if (row.id?.includes('organization') || lowerTitle.includes('organization') || lowerTitle.includes('foundation') || lowerTitle.includes('center') || lowerTitle.includes('institute')) pinType = 'organization'
         if (lowerTitle.includes('event') || lowerTitle.includes('conference') || lowerTitle.includes('workshop') || lowerTitle.includes('webinar') || lowerTitle.includes('rally') || lowerTitle.includes('march')) pinType = 'event'
+        if (lowerTitle.includes('resource') || lowerTitle.includes('hotline') || lowerTitle.includes('shelter') || lowerTitle.includes('clinic') || lowerTitle.includes('guide') || lowerTitle.includes('support')) pinType = 'resource'
+        if (row.id?.includes('violation') || lowerTitle.includes('violation') || lowerTitle.includes('abuse') || lowerTitle.includes('discrimination') || lowerTitle.includes('assault') || lowerTitle.includes('harassment')) pinType = 'violation'
         if (lowerTitle.includes('resource') || lowerTitle.includes('hotline') || lowerTitle.includes('shelter') || lowerTitle.includes('clinic') || lowerTitle.includes('guide') || lowerTitle.includes('support')) pinType = 'resource'
         
         return { ...row, type: pinType }

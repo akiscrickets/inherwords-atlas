@@ -22,7 +22,7 @@ import MapPopupContent from './MapPopupContent'
  */
 
 // Pin interface for TypeScript
-type PinType = 'story' | 'organization' | 'event' | 'resource'
+type PinType = 'story' | 'organization' | 'event' | 'resource' | 'violation'
 
 interface MapPin {
   id?: string
@@ -303,12 +303,12 @@ export default function InteractiveMapClient() {
       const storyText = pin.story || ''
       
       // Explicit type wins if it's one of the supported values
-      if (['story', 'organization', 'event', 'resource'].includes(normalizedType)) {
+      if (['story', 'organization', 'event', 'resource', 'violation'].includes(normalizedType)) {
         return normalizedType
       }
       
       // Category hints
-      if (['organization', 'event', 'resource'].includes(normalizedCategory)) {
+      if (['organization', 'event', 'resource', 'violation'].includes(normalizedCategory)) {
         return normalizedCategory as PinType
       }
       
@@ -316,6 +316,7 @@ export default function InteractiveMapClient() {
       if (storyText.startsWith('TYPE:organization')) return 'organization'
       if (storyText.startsWith('TYPE:event')) return 'event'
       if (storyText.startsWith('TYPE:resource')) return 'resource'
+      if (storyText.startsWith('TYPE:violation')) return 'violation'
       
       // Title heuristics
       const isOrg = lowerTitle.includes('organization') || lowerTitle.includes('foundation') || lowerTitle.includes('center') || lowerTitle.includes('institute') || lowerTitle.startsWith('[org]') || lowerTitle.includes(' ngo ')
@@ -326,6 +327,9 @@ export default function InteractiveMapClient() {
       
       const isResource = lowerTitle.includes('resource') || lowerTitle.includes('hotline') || lowerTitle.includes('shelter') || lowerTitle.includes('clinic') || lowerTitle.includes('guide') || lowerTitle.includes('support')
       if (isResource) return 'resource'
+      
+      const isViolation = lowerTitle.includes('violation') || lowerTitle.includes('abuse') || lowerTitle.includes('discrimination') || lowerTitle.includes('assault') || lowerTitle.includes('harassment')
+      if (isViolation) return 'violation'
       
       // Default
       return 'story'
@@ -340,7 +344,8 @@ export default function InteractiveMapClient() {
         story: { base: '#ff6b6b', mid: '#dc2626', dark: '#b91c1c' },
         organization: { base: '#3b82f6', mid: '#1e3a8a', dark: '#1e40af' },
         event: { base: '#a78bfa', mid: '#7c3aed', dark: '#5b21b6' },
-        resource: { base: '#34d399', mid: '#059669', dark: '#065f46' }
+        resource: { base: '#34d399', mid: '#059669', dark: '#065f46' },
+        violation: { base: '#ffd700', mid: '#eab308', dark: '#ca8a04' }
       }
       
       const colors = palette[pinType]
@@ -406,13 +411,16 @@ export default function InteractiveMapClient() {
           ? storyRaw.substring(11)
           : storyRaw.startsWith('TYPE:resource\n')
             ? storyRaw.substring(14)
-            : storyRaw
+            : storyRaw.startsWith('TYPE:violation\n')
+              ? storyRaw.substring(15)
+              : storyRaw
       
       const badgeByType: Record<PinType, { label: string; classes: string; emptyText: string }> = {
         story: { label: 'Story', classes: 'bg-rose-100 text-rose-800', emptyText: 'Story content not available' },
         organization: { label: 'Organization', classes: 'bg-blue-100 text-blue-800', emptyText: 'Organization information not available' },
         event: { label: 'Event', classes: 'bg-purple-100 text-purple-800', emptyText: 'Event details not available' },
-        resource: { label: 'Resource', classes: 'bg-emerald-100 text-emerald-800', emptyText: 'Resource information not available' }
+        resource: { label: 'Resource', classes: 'bg-emerald-100 text-emerald-800', emptyText: 'Resource information not available' },
+        violation: { label: 'Violation of Human Rights', classes: 'bg-yellow-100 text-yellow-800', emptyText: 'Violation information not available' }
       }
       const badge = badgeByType[resolvedType]
       
@@ -478,6 +486,10 @@ export default function InteractiveMapClient() {
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#059669' }}></div>
                 <span className="text-sm text-gray-600">Resources</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#eab308' }}></div>
+                <span className="text-sm text-gray-600">Violation of Human Rights</span>
               </div>
             </div>
           </div>

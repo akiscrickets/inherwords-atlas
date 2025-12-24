@@ -92,20 +92,20 @@ export async function POST(request: NextRequest) {
 
     console.log('📍 Coordinates found:', coordinates)
 
-    // Robust pin type determination with support for event and resource
+    // Robust pin type determination with support for event, resource, and violation
     const normalizedType = (type || 'story').toLowerCase()
     const normalizedCategory = (category || '').toLowerCase()
     const lowerTitle = (title || '').toLowerCase()
     const storyText = cleanStory || ''
-    let pinType: 'story' | 'organization' | 'event' | 'resource' = 'story'
+    let pinType: 'story' | 'organization' | 'event' | 'resource' | 'violation' = 'story'
     
     // Explicit type if valid
-    if (['story', 'organization', 'event', 'resource'].includes(normalizedType)) {
+    if (['story', 'organization', 'event', 'resource', 'violation'].includes(normalizedType)) {
       pinType = normalizedType as typeof pinType
     }
     
     // Category hints
-    if (['organization', 'event', 'resource'].includes(normalizedCategory)) {
+    if (['organization', 'event', 'resource', 'violation'].includes(normalizedCategory)) {
       pinType = normalizedCategory as typeof pinType
     }
     
@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
     if (storyText.startsWith('TYPE:organization')) pinType = 'organization'
     if (storyText.startsWith('TYPE:event')) pinType = 'event'
     if (storyText.startsWith('TYPE:resource')) pinType = 'resource'
+    if (storyText.startsWith('TYPE:violation')) pinType = 'violation'
     
     // Title/id heuristics
     if (storyId?.includes('organization') || lowerTitle.includes('organization') || lowerTitle.includes('foundation') || lowerTitle.includes('center') || lowerTitle.includes('institute') || lowerTitle.startsWith('[org]')) {
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
       pinType = 'event'
     } else if (lowerTitle.includes('resource') || lowerTitle.includes('hotline') || lowerTitle.includes('shelter') || lowerTitle.includes('clinic') || lowerTitle.includes('guide') || lowerTitle.includes('support')) {
       pinType = 'resource'
+    } else if (storyId?.includes('violation') || lowerTitle.includes('violation') || lowerTitle.includes('abuse') || lowerTitle.includes('discrimination') || lowerTitle.includes('assault') || lowerTitle.includes('harassment')) {
+      pinType = 'violation'
     }
 
     console.log('🎯 PIN TYPE LOGIC:', {
@@ -138,7 +141,9 @@ export async function POST(request: NextRequest) {
         ? cleanStory.substring(11)
         : cleanStory?.startsWith('TYPE:resource\n')
           ? cleanStory.substring(14)
-          : cleanStory
+          : cleanStory?.startsWith('TYPE:violation\n')
+            ? cleanStory.substring(15)
+            : cleanStory
 
     // Create new pin object
     const newPin = {
