@@ -153,8 +153,12 @@ export async function POST(request: NextRequest) {
       city: city || ''
     }
 
-    if (process.env.NODE_ENV === 'production') {
-      // Production: Use Vercel Postgres database
+    // Check if we have database connection
+    const hasDatabase = process.env.POSTGRES_URL && process.env.NODE_ENV === 'production'
+    
+    if (hasDatabase) {
+      // Production with database: Use Vercel Postgres
+      console.log('💾 Using Vercel Postgres database')
       try {
         // Try to insert with story field, fallback if column doesn't exist
         try {

@@ -44,7 +44,7 @@ export default function InteractiveMapClient() {
   const leafletMap = useRef<L.Map | null>(null)
   const [storyPins, setStoryPins] = useState<MapPin[]>(fallbackPins)
 
-  // Fetch pins from Google Sheets
+  // Fetch pins from API - with auto-refresh every 30 seconds
   useEffect(() => {
     const fetchPins = async () => {
       console.log('🔍 Fetching pins from API...')
@@ -72,7 +72,13 @@ export default function InteractiveMapClient() {
       }
     }
 
+    // Initial fetch
     fetchPins()
+    
+    // Refresh pins every 30 seconds to pick up new additions
+    const interval = setInterval(fetchPins, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
