@@ -92,36 +92,53 @@ export async function POST(request: NextRequest) {
 
     console.log('📍 Coordinates found:', coordinates)
 
-    // BULLETPROOF pin type determination
-    let pinType = 'story' // default
+    // Robust pin type determination with support for event and resource
+    const normalizedType = (type || 'story').toLowerCase()
+    const normalizedCategory = (category || '').toLowerCase()
+    const lowerTitle = (title || '').toLowerCase()
+    const storyText = cleanStory || ''
+    let pinType: 'story' | 'organization' | 'event' | 'resource' = 'story'
     
-    // Check all possible ways this could be an organization
-    if (type === 'organization' || 
-        category === 'organization' || 
-        storyId?.includes('organization') ||
-        title?.toLowerCase().includes('organization') ||
-        title?.startsWith('[ORG]') ||
-        cleanStory?.toLowerCase().includes('organization') ||
-        cleanStory?.startsWith('TYPE:organization')) {
-      pinType = 'organization'
+    // Explicit type if valid
+    if (['story', 'organization', 'event', 'resource'].includes(normalizedType)) {
+      pinType = normalizedType as typeof pinType
     }
     
+    // Category hints
+    if (['organization', 'event', 'resource'].includes(normalizedCategory)) {
+      pinType = normalizedCategory as typeof pinType
+    }
+    
+    // Content markers
+    if (storyText.startsWith('TYPE:organization')) pinType = 'organization'
+    if (storyText.startsWith('TYPE:event')) pinType = 'event'
+    if (storyText.startsWith('TYPE:resource')) pinType = 'resource'
+    
+    // Title/id heuristics
+    if (storyId?.includes('organization') || lowerTitle.includes('organization') || lowerTitle.includes('foundation') || lowerTitle.includes('center') || lowerTitle.includes('institute') || lowerTitle.startsWith('[org]')) {
+      pinType = 'organization'
+    } else if (lowerTitle.includes('event') || lowerTitle.includes('conference') || lowerTitle.includes('workshop') || lowerTitle.includes('webinar') || lowerTitle.includes('rally') || lowerTitle.includes('march')) {
+      pinType = 'event'
+    } else if (lowerTitle.includes('resource') || lowerTitle.includes('hotline') || lowerTitle.includes('shelter') || lowerTitle.includes('clinic') || lowerTitle.includes('guide') || lowerTitle.includes('support')) {
+      pinType = 'resource'
+    }
+
     console.log('🎯 PIN TYPE LOGIC:', {
       inputType: type,
       inputCategory: category,
       storyId,
-      hasOrgInId: storyId?.includes('organization'),
-      hasOrgInTitle: title?.toLowerCase().includes('organization'),
-      hasOrgPrefix: title?.startsWith('[ORG]'),
-      hasOrgInStory: cleanStory?.toLowerCase().includes('organization'),
-      hasOrgMarker: cleanStory?.startsWith('TYPE:organization'),
       finalPinType: pinType
     })
 
     // Clean the title and story for display
     const cleanTitle = title?.startsWith('[ORG]') ? title.substring(5).trim() : title
-    const finalStory = cleanStory?.startsWith('TYPE:organization\n') ? 
-      cleanStory.substring(18) : cleanStory
+    const finalStory = cleanStory?.startsWith('TYPE:organization\n') 
+      ? cleanStory.substring(18)
+      : cleanStory?.startsWith('TYPE:event\n')
+        ? cleanStory.substring(11)
+        : cleanStory?.startsWith('TYPE:resource\n')
+          ? cleanStory.substring(14)
+          : cleanStory
 
     // Create new pin object
     const newPin = {

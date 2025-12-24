@@ -86,5 +86,27 @@
     "category": "story",
     "country": "United States",
     "city": "SAN JOSE"
+  },
+  {
+    "id": "event_1",
+    "title": "Workplace Rights Workshop (Community Event)",
+    "story": "TYPE:event\nFree community workshop focused on workplace equality rights, pay transparency, and advocacy training.",
+    "lat": 51.5074,
+    "lng": -0.1278,
+    "type": "event",
+    "category": "event",
+    "country": "United Kingdom",
+    "city": "London"
+  },
+  {
+    "id": "resource_1",
+    "title": "LA Women Support Hotline",
+    "story": "TYPE:resource\n24/7 hotline providing confidential support, referrals to shelters, and legal resources.",
+    "lat": 34.0522,
+    "lng": -118.2437,
+    "type": "resource",
+    "category": "resource",
+    "country": "United States",
+    "city": "Los Angeles"
   }
 ]

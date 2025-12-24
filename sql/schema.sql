@@ -11,6 +11,13 @@ CREATE TABLE IF NOT EXISTS map_pins (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Insert sample pins
+INSERT INTO map_pins (id, title, lat, lng, type, category, country, city) VALUES
+('sample_1', 'Healthcare Access Story', 40.7128, -74.006, 'story', 'healthcare', 'United States', 'New York'),
+('sample_2', 'Workplace Rights Campaign', 51.5074, -0.1278, 'story', 'workplace', 'United Kingdom', 'London'),
+('sample_3', 'Education Equality Initiative', 48.8566, 2.3522, 'story', 'education', 'France', 'Paris')
+ON CONFLICT (id) DO NOTHING;
+
 -- Create stories table
 CREATE TABLE IF NOT EXISTS stories (
   id VARCHAR(255) PRIMARY KEY,
@@ -24,10 +31,3 @@ CREATE TABLE IF NOT EXISTS stories (
   submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Insert sample pins
-INSERT INTO map_pins (id, title, lat, lng, type, category, country, city) VALUES
-('sample_1', 'Healthcare Access Story', 40.7128, -74.006, 'story', 'healthcare', 'United States', 'New York'),
-('sample_2', 'Workplace Rights Campaign', 51.5074, -0.1278, 'story', 'workplace', 'United Kingdom', 'London'),
-('sample_3', 'Education Equality Initiative', 48.8566, 2.3522, 'story', 'education', 'France', 'Paris')
-ON CONFLICT (id) DO NOTHING;

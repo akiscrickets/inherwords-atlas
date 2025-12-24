@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
+import { createRoot } from 'react-dom/client'
+import MapPopupContent from './MapPopupContent'
 
 /*
  * INTERACTIVE MAP COMPONENT
@@ -20,11 +22,13 @@ import L from 'leaflet'
  */
 
 // Pin interface for TypeScript
+type PinType = 'story' | 'organization' | 'event' | 'resource'
+
 interface MapPin {
   id?: string
   lat: number
   lng: number
-  type: 'story' | 'organization'
+  type: PinType
   title: string
   category: string
   story?: string
@@ -285,41 +289,71 @@ export default function InteractiveMapClient() {
       }
     })
 
-    // Create custom pushpin icon function with BULLETPROOF type detection
-    const createPushpinIcon = (pin: MapPin) => {
-      // MULTIPLE WAYS to detect if this should be an organization pin
-      let isOrganization = false
+    // Derive pin type from multiple hints
+    const derivePinType = (pin: MapPin): PinType => {
+      const normalizedType = (pin.type || 'story').toLowerCase() as PinType
+      const normalizedCategory = (pin.category || '').toLowerCase()
+      const lowerTitle = (pin.title || '').toLowerCase()
+      const storyText = pin.story || ''
       
-      if (pin.type === 'organization' ||
-          pin.category === 'organization' ||
-          pin.id?.includes('organization') ||
-          pin.title?.toLowerCase().includes('organization') ||
-          pin.title?.toLowerCase().includes('org ') ||
-          pin.title?.toLowerCase().includes('foundation') ||
-          pin.title?.toLowerCase().includes('center') ||
-          pin.title?.toLowerCase().includes('institute') ||
-          pin.title?.startsWith('[ORG]') ||
-          pin.story?.startsWith('TYPE:organization')) {
-        isOrganization = true
+      // Explicit type wins if it's one of the supported values
+      if (['story', 'organization', 'event', 'resource'].includes(normalizedType)) {
+        return normalizedType
       }
       
-      const color = isOrganization ? '#1e3a8a' : '#dc2626' // Dark blue for organizations, red for stories
+      // Category hints
+      if (['organization', 'event', 'resource'].includes(normalizedCategory)) {
+        return normalizedCategory as PinType
+      }
+      
+      // Content markers
+      if (storyText.startsWith('TYPE:organization')) return 'organization'
+      if (storyText.startsWith('TYPE:event')) return 'event'
+      if (storyText.startsWith('TYPE:resource')) return 'resource'
+      
+      // Title heuristics
+      const isOrg = lowerTitle.includes('organization') || lowerTitle.includes('foundation') || lowerTitle.includes('center') || lowerTitle.includes('institute') || lowerTitle.startsWith('[org]') || lowerTitle.includes(' ngo ')
+      if (isOrg) return 'organization'
+      
+      const isEvent = lowerTitle.includes('event') || lowerTitle.includes('conference') || lowerTitle.includes('workshop') || lowerTitle.includes('webinar') || lowerTitle.includes('rally') || lowerTitle.includes('march')
+      if (isEvent) return 'event'
+      
+      const isResource = lowerTitle.includes('resource') || lowerTitle.includes('hotline') || lowerTitle.includes('shelter') || lowerTitle.includes('clinic') || lowerTitle.includes('guide') || lowerTitle.includes('support')
+      if (isResource) return 'resource'
+      
+      // Default
+      return 'story'
+    }
+
+    // Create custom pushpin icon function with multi-type support
+    const createPushpinIcon = (pin: MapPin) => {
+      const pinType = derivePinType(pin)
+      
+      // Color palette by type
+      const palette: Record<PinType, { base: string; mid: string; dark: string }> = {
+        story: { base: '#ff6b6b', mid: '#dc2626', dark: '#b91c1c' },
+        organization: { base: '#3b82f6', mid: '#1e3a8a', dark: '#1e40af' },
+        event: { base: '#a78bfa', mid: '#7c3aed', dark: '#5b21b6' },
+        resource: { base: '#34d399', mid: '#059669', dark: '#065f46' }
+      }
+      
+      const colors = palette[pinType]
       
       console.log('🎨 PIN COLOR DEBUG:', {
         title: pin.title,
+        resolvedType: pinType,
         type: pin.type,
         category: pin.category,
         id: pin.id,
         hasOrgPrefix: pin.title?.startsWith('[ORG]'),
         hasOrgMarker: pin.story?.startsWith('TYPE:organization'),
-        isOrganization,
-        color
+        colors
       })
       
       return L.divIcon({
         className: 'custom-marker',
         html: `<div class="pushpin-container">
-          <div class="pushpin-head" style="background: radial-gradient(circle at 30% 30%, ${isOrganization ? '#3b82f6' : '#ff6b6b'}, ${color}, ${isOrganization ? '#1e40af' : '#b91c1c'});"></div>
+          <div class="pushpin-head" style="background: radial-gradient(circle at 30% 30%, ${colors.base}, ${colors.mid}, ${colors.dark});"></div>
           <div class="pushpin-needle"></div>
         </div>`,
         iconSize: [26, 38],
@@ -355,26 +389,48 @@ export default function InteractiveMapClient() {
       const marker = L.marker([pin.lat, pin.lng], { icon: createPushpinIcon(pin) })
         .addTo(leafletMap.current!)
 
-      // Add popup with story/organization info using bulletproof detection
-      const isOrgPin = pin.type === 'organization' || 
-                       pin.category === 'organization' || 
-                       pin.id?.includes('organization') ||
-                       pin.title?.toLowerCase().includes('organization') ||
-                       pin.title?.startsWith('[ORG]') ||
-                       pin.story?.startsWith('TYPE:organization')
-      
-      // Clean the title and story for display
+      // Determine type and clean display fields
+      const resolvedType = derivePinType(pin)
       const displayTitle = pin.title?.startsWith('[ORG]') ? pin.title.substring(5).trim() : pin.title
-      const displayStory = pin.story?.startsWith('TYPE:organization\n') ? 
-        pin.story.substring(18) : pin.story
       
-      marker.bindPopup(`
-        <div class="custom-popup">
-          <h4 class="font-bold text-sm mb-1">${displayTitle}</h4>
-          <p class="text-xs text-slate-600 mb-2">${isOrgPin ? (displayStory && displayStory.trim() ? displayStory.substring(0, 150) + (displayStory.length > 150 ? '...' : '') : 'Organization information not available') : (displayStory && displayStory.trim() ? displayStory.substring(0, 150) + (displayStory.length > 150 ? '...' : '') : 'Story content not available')}</p>
-          <span class="inline-block px-2 py-1 ${isOrgPin ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'} text-xs rounded-full">${isOrgPin ? 'Organization' : 'Story'}</span>
-        </div>
-      `)
+      const storyRaw = pin.story || ''
+      const displayStory = storyRaw.startsWith('TYPE:organization\n')
+        ? storyRaw.substring(18)
+        : storyRaw.startsWith('TYPE:event\n')
+          ? storyRaw.substring(11)
+          : storyRaw.startsWith('TYPE:resource\n')
+            ? storyRaw.substring(14)
+            : storyRaw
+      
+      const badgeByType: Record<PinType, { label: string; classes: string; emptyText: string }> = {
+        story: { label: 'Story', classes: 'bg-rose-100 text-rose-800', emptyText: 'Story content not available' },
+        organization: { label: 'Organization', classes: 'bg-blue-100 text-blue-800', emptyText: 'Organization information not available' },
+        event: { label: 'Event', classes: 'bg-purple-100 text-purple-800', emptyText: 'Event details not available' },
+        resource: { label: 'Resource', classes: 'bg-emerald-100 text-emerald-800', emptyText: 'Resource information not available' }
+      }
+      const badge = badgeByType[resolvedType]
+      
+      const storyPreview = displayStory && displayStory.trim()
+        ? displayStory.substring(0, 150) + (displayStory.length > 150 ? '...' : '')
+        : badge.emptyText
+      
+      // Create a div for the popup content
+      const popupDiv = document.createElement('div')
+      const root = createRoot(popupDiv)
+      
+      // Render React component into the popup
+      root.render(
+        <MapPopupContent
+          id={pin.id || `pin-${pin.lat}-${pin.lng}`}
+          title={displayTitle}
+          author={resolvedType === 'story' ? 'Anonymous' : undefined}
+          country={pin.country}
+          excerpt={storyPreview}
+          fullStory={displayStory || ''}
+        />
+      )
+      
+      marker.bindPopup(popupDiv)
     })
   }, [storyPins]) // Re-run when storyPins changes
 
@@ -397,12 +453,20 @@ export default function InteractiveMapClient() {
             <h4 className="font-medium text-sm text-gray-700 mb-3">Pin Types</h4>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-red-600"></div>
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#dc2626' }}></div>
                 <span className="text-sm text-gray-600">Stories</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-blue-800"></div>
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#1e3a8a' }}></div>
                 <span className="text-sm text-gray-600">Organizations</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#7c3aed' }}></div>
+                <span className="text-sm text-gray-600">Events</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#059669' }}></div>
+                <span className="text-sm text-gray-600">Resources</span>
               </div>
             </div>
           </div>

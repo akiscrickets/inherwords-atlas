@@ -1,0 +1,62 @@
+[
+  {
+    "id": "story_001",
+    "title": "Breaking Barriers in Tech",
+    "story": "As a woman in technology, I've faced numerous challenges throughout my career. From being the only woman in meetings to having my ideas overlooked, the journey has been difficult. However, with determination and support from fellow women in tech, I've managed to break through barriers and now lead a team of talented engineers. My advice to other women: never give up on your dreams.",
+    "country": "United States",
+    "city": "San Francisco",
+    "email": "tech.warrior@example.com",
+    "anonymous": false,
+    "status": "pending",
+    "submittedAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  {
+    "id": "story_002",
+    "title": "Healthcare Access Challenge",
+    "story": "Living in a rural area, accessing quality healthcare has always been a struggle for women in my community. The nearest gynecologist is 200 miles away, and many women can't afford to travel. We started a community health initiative that brings mobile clinics to our area twice a month, providing essential women's health services.",
+    "country": "Canada",
+    "city": "Rural Saskatchewan", 
+    "email": "",
+    "anonymous": true,
+    "status": "approved",
+    "submittedAt": "2024-01-14T08:45:00Z",
+    "updatedAt": "2024-01-16T14:20:00Z"
+  },
+  {
+    "id": "story_003",
+    "title": "Education Changes Everything",
+    "story": "Growing up in Mumbai, I witnessed firsthand how education could transform a woman's life. Despite financial constraints and societal pressure to marry young, I persisted with my studies. With the help of scholarships and mentors, I became the first woman in my family to graduate from university and now work as a software engineer.",
+    "country": "India",
+    "city": "Mumbai",
+    "email": "mumbai.dreamer@example.com",
+    "anonymous": false,
+    "status": "pending",
+    "submittedAt": "2024-01-12T16:15:00Z",
+    "updatedAt": "2024-01-18T09:30:00Z"
+  },
+  {
+    "id": "story_004",
+    "title": "Fighting Workplace Inequality",
+    "story": "When I discovered I was earning 30% less than my male colleagues for the same work, I decided to take action. It wasn't easy to speak up, knowing it could affect my career. But with careful documentation and support from HR allies, we successfully negotiated for pay equity across all departments. Change is possible when we stand together.",
+    "country": "United Kingdom",
+    "city": "London",
+    "email": "equality.fighter@example.com", 
+    "anonymous": false,
+    "status": "approved",
+    "submittedAt": "2024-01-20T11:00:00Z",
+    "updatedAt": "2024-01-22T15:45:00Z"
+  },
+  {
+    "id": "story_005",
+    "title": "Supporting New Mothers",
+    "story": "After struggling with postpartum depression and feeling isolated as a new mother, I realized many women faced similar challenges. I started a support group in my community that meets weekly. What began as five mothers sharing their experiences has grown into a network of over 200 women supporting each other through motherhood.",
+    "country": "Australia",
+    "city": "Sydney",
+    "email": "",
+    "anonymous": true,
+    "status": "pending",
+    "submittedAt": "2024-01-18T13:45:00Z",
+    "updatedAt": "2024-01-19T16:10:00Z"
+  }
+]
