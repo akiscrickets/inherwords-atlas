@@ -450,7 +450,7 @@ export default function AdminPage() {
                   </label>
                   <select
                     value={newPin.type}
-                    onChange={(e) => setNewPin({ ...newPin, type: e.target.value as any })}
+                    onChange={(e) => setNewPin({ ...newPin, type: e.target.value as 'story' | 'organization' | 'protection' | 'resource' | 'violation' })}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     required
                   >
