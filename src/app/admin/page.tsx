@@ -34,11 +34,22 @@ interface MapPin {
 export default function AdminPage() {
   const [stories, setStories] = useState<Story[]>([])
   const [currentPins, setCurrentPins] = useState<MapPin[]>([])
-  const [activeTab, setActiveTab] = useState<'stories' | 'pins'>('stories')
+  const [activeTab, setActiveTab] = useState<'stories' | 'pins' | 'create'>('stories')
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
   const router = useRouter()
+
+  // Form state for creating pins
+  const [newPin, setNewPin] = useState({
+    title: '',
+    story: '',
+    country: '',
+    city: '',
+    type: 'story' as 'story' | 'organization' | 'protection' | 'resource' | 'violation',
+    category: ''
+  })
 
   const fetchStories = async () => {
     try {
@@ -295,6 +306,66 @@ export default function AdminPage() {
     }
   }
 
+  const createManualPin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!newPin.title || !newPin.country) {
+      alert('❌ Title and Country are required!')
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      const storyId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      const requestData = {
+        storyId,
+        title: newPin.title,
+        story: newPin.story,
+        country: newPin.country,
+        city: newPin.city,
+        category: newPin.category || newPin.type,
+        type: newPin.type
+      }
+      
+      console.log('🚀 Creating manual pin:', requestData)
+      
+      const response = await fetch('/api/admin/add-to-map', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+        },
+        body: JSON.stringify(requestData)
+      })
+
+      if (response.ok) {
+        alert('✅ Pin created and added to map successfully!')
+        // Reset form
+        setNewPin({
+          title: '',
+          story: '',
+          country: '',
+          city: '',
+          type: 'story',
+          category: ''
+        })
+        // Refresh pins
+        fetchCurrentPins()
+        // Switch to pins tab
+        setActiveTab('pins')
+      } else {
+        const errorData = await response.json()
+        alert(`❌ Failed to create pin: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error creating pin:', error)
+      alert('❌ Error creating pin')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   if (loading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#c4b5d6' }}>
@@ -350,11 +421,176 @@ export default function AdminPage() {
           >
             📍 Current Pins ({currentPins.length})
           </button>
+          <button
+            onClick={() => setActiveTab('create')}
+            className={`px-6 py-3 rounded-md transition-all font-medium ${
+              activeTab === 'create'
+                ? 'bg-white text-purple-700 shadow-sm'
+                : 'text-gray-700 hover:text-gray-900'
+            }`}
+          >
+            ➕ Create Pin
+          </button>
         </div>
 
         {/* Content */}
         <div className="grid gap-6">
-          {activeTab === 'stories' ? (
+          {activeTab === 'create' ? (
+            // Create Pin Tab
+            <div className="rounded-xl p-8 shadow-lg max-w-3xl mx-auto" style={{ backgroundColor: '#f3ecf8' }}>
+              <h2 className="text-2xl font-bold mb-6" style={{ color: '#1a1a1a' }}>
+                ➕ Create New Pin
+              </h2>
+              
+              <form onSubmit={createManualPin} className="space-y-6">
+                {/* Pin Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#1a1a1a' }}>
+                    Pin Type *
+                  </label>
+                  <select
+                    value={newPin.type}
+                    onChange={(e) => setNewPin({ ...newPin, type: e.target.value as any })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="story">🔵 Story (Personal Experience)</option>
+                    <option value="organization">🔷 Organization (Non-profit, Foundation)</option>
+                    <option value="protection">🟣 Protection of Human Rights (Event, Workshop, Campaign)</option>
+                    <option value="resource">🟢 Resource (Hotline, Shelter, Support)</option>
+                    <option value="violation">🟡 Violation of Human Rights</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-600">
+                    Choose the type of pin you want to create
+                  </p>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#1a1a1a' }}>
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={newPin.title}
+                    onChange={(e) => setNewPin({ ...newPin, title: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="e.g., Women's Rights Organization, Healthcare Story, Support Hotline"
+                    required
+                  />
+                </div>
+
+                {/* Story/Description */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#1a1a1a' }}>
+                    Description
+                  </label>
+                  <textarea
+                    value={newPin.story}
+                    onChange={(e) => setNewPin({ ...newPin, story: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    rows={6}
+                    placeholder="Enter the story, organization details, resource information, or event description..."
+                  />
+                  <p className="mt-1 text-xs text-gray-600">
+                    Provide details about this pin (optional but recommended)
+                  </p>
+                </div>
+
+                {/* Country */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#1a1a1a' }}>
+                    Country *
+                  </label>
+                  <input
+                    type="text"
+                    value={newPin.country}
+                    onChange={(e) => setNewPin({ ...newPin, country: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="e.g., United States, Canada, United Kingdom"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-600">
+                    Enter the full country name
+                  </p>
+                </div>
+
+                {/* City */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#1a1a1a' }}>
+                    City (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newPin.city}
+                    onChange={(e) => setNewPin({ ...newPin, city: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="e.g., New York, London, Toronto"
+                  />
+                  <p className="mt-1 text-xs text-gray-600">
+                    City name for more precise location (optional)
+                  </p>
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#1a1a1a' }}>
+                    Category (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newPin.category}
+                    onChange={(e) => setNewPin({ ...newPin, category: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="e.g., healthcare, workplace, education, legal"
+                  />
+                  <p className="mt-1 text-xs text-gray-600">
+                    Optional category tag (defaults to pin type if not specified)
+                  </p>
+                </div>
+
+                {/* Info Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-medium text-blue-900 mb-2">ℹ️ Pin Type Guide:</h3>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• <strong>Story:</strong> Personal experiences and testimonials</li>
+                    <li>• <strong>Organization:</strong> Non-profits, foundations, advocacy groups</li>
+                    <li>• <strong>Protection:</strong> Events, workshops, campaigns for human rights</li>
+                    <li>• <strong>Resource:</strong> Hotlines, shelters, legal aid, support services</li>
+                    <li>• <strong>Violation:</strong> Documented cases of human rights violations</li>
+                  </ul>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="submit"
+                    disabled={isCreating}
+                    className="flex-1 px-6 py-3 text-white rounded-lg hover:opacity-90 disabled:opacity-50 font-medium transition-all"
+                    style={{ backgroundColor: '#0f7c7c' }}
+                  >
+                    {isCreating ? '⏳ Creating Pin...' : '✅ Create & Add to Map'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewPin({
+                        title: '',
+                        story: '',
+                        country: '',
+                        city: '',
+                        type: 'story',
+                        category: ''
+                      })
+                    }}
+                    className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition-all"
+                  >
+                    🔄 Reset Form
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : activeTab === 'stories' ? (
             // Stories Tab
             stories.length === 0 ? (
               <div className="text-center py-12">
