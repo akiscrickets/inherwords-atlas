@@ -31,22 +31,10 @@ Visit the live site: https://inherwords.vercel.app
 
 ## 🚀 Deployment on Vercel
 
-### Environment Variables Required:
-
-```env
-ADMIN_USERNAME=your_admin_username
-ADMIN_PASSWORD=your_secure_password
-JWT_SECRET=your-jwt-secret-key-change-this-in-production
-```
 
 ### Setup Instructions:
 
 1. **Deploy to Vercel**: Connect your GitHub repository to Vercel
-2. **Set Environment Variables**: In Vercel dashboard → Settings → Environment Variables, add:
-   - `ADMIN_USERNAME`: Your admin username
-   - `ADMIN_PASSWORD`: Your secure admin password  
-   - `JWT_SECRET`: A secure random string for JWT token signing
-3. **Redeploy**: Trigger a new deployment after adding environment variables
 
 ### Admin Access After Deployment:
 - Visit `https://your-app.vercel.app/admin/login`
