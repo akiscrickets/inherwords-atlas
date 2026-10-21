@@ -99,16 +99,10 @@ export default function InteractiveMapClient() {
       position: 'topleft'
     }).addTo(leafletMap.current)
 
-    // Add tile layer with clearer country borders
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 19
-    }).addTo(leafletMap.current)
-
-    // Add country boundaries overlay for clearer borders
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
+    // OpenStreetMap's standard tiles include labels and do not require an API key.
+    // Country boundaries and inequality colors are drawn by the GeoJSON layer below.
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
     }).addTo(leafletMap.current)
 
